@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { LogOut, Eye, Brain, Monitor, User, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getMonitoringStatus } from "@/api"; // ✅ NEW
+import { getMonitoringStatus, BASE_URL } from "@/api"; // ✅ BASE_URL imported
 
 interface StudentData {
   student_name: string;
@@ -58,9 +58,8 @@ const StudentDashboard = () => {
 
   const fetchMonitoringData = async () => {
     if (!studentData) return;
-
     try {
-      const data = await getMonitoringStatus(studentData.registration_id); // ✅ call backend
+      const data = await getMonitoringStatus(studentData.registration_id);
       setMonitoringData(data);
     } catch (error) {
       console.error("Error fetching monitoring data:", error);
@@ -137,7 +136,7 @@ const StudentDashboard = () => {
             <CardContent>
               <div className="relative">
                 <img
-                  src="http://192.168.0.194:5050/video_feed_multi"
+                  src={`${BASE_URL}/api/video_feed`}
                   alt="Live monitoring feed"
                   className="w-full h-64 object-cover rounded-lg border border-border"
                   onError={(e) => {
