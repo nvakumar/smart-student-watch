@@ -15,7 +15,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getStudentReports, deleteAllStudentData } from "@/api"; // ✅ NEW
+import { getStudentReports, deleteAllStudentData } from "@/api";
+import { BASE_URL } from "@/api/constants"; // If BASE_URL is exported from a constants file
 
 interface StudentReport {
   id: string;
@@ -43,7 +44,7 @@ const Reports = () => {
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const data = await getStudentReports(); // ✅ Updated
+      const data = await getStudentReports();
       setReports(data.reports || []);
     } catch (error) {
       toast({
@@ -51,8 +52,6 @@ const Reports = () => {
         description: "Failed to fetch reports. Showing demo data.",
         variant: "destructive",
       });
-
-      // Optional: fallback demo data (remove if backend is ready)
       setReports([]);
     } finally {
       setLoading(false);
@@ -61,13 +60,14 @@ const Reports = () => {
 
   const handleDownload = async (url: string, filename: string) => {
     try {
+      const fullUrl = url.startsWith("http") ? url : `${BASE_URL}${url}`;
       toast({
         title: "Download Started",
         description: `Downloading ${filename}...`,
       });
 
       const link = document.createElement("a");
-      link.href = url;
+      link.href = fullUrl;
       link.download = filename;
       document.body.appendChild(link);
       link.click();
@@ -84,7 +84,7 @@ const Reports = () => {
   const handleDeleteAllData = async () => {
     setDeleting(true);
     try {
-      await deleteAllStudentData(); // ✅ Updated
+      await deleteAllStudentData();
       setReports([]);
       toast({
         title: "Data Deleted",
@@ -199,7 +199,7 @@ const Reports = () => {
           <CardContent>
             {loading ? (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
                 <p className="text-muted-foreground mt-2">Loading reports...</p>
               </div>
             ) : reports.length === 0 ? (
