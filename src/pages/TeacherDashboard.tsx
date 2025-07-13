@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Monitor, Users, FileText, RefreshCw, Eye, Brain } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getCurrentStudents } from "@/api"; // ✅ NEW
+import { getCurrentStudents, BASE_URL } from "@/api"; // ✅ Updated to include BASE_URL
 
 interface ActiveStudent {
   id: string;
@@ -24,14 +24,13 @@ const TeacherDashboard = () => {
 
   useEffect(() => {
     fetchActiveStudents();
-
     const interval = setInterval(fetchActiveStudents, 5000);
     return () => clearInterval(interval);
   }, []);
 
   const fetchActiveStudents = async () => {
     try {
-      const data = await getCurrentStudents(); // ✅ Backend call
+      const data = await getCurrentStudents();
       setActiveStudents(data.students || []);
     } catch (error) {
       console.error("Error fetching active students:", error);
@@ -43,7 +42,6 @@ const TeacherDashboard = () => {
     setLoading(true);
     fetchActiveStudents();
     setTimeout(() => setLoading(false), 1000);
-
     toast({
       title: "Data Refreshed",
       description: "Student monitoring data has been updated.",
@@ -57,8 +55,11 @@ const TeacherDashboard = () => {
       case "posture":
         return status === "Good" ? "success" : "warning";
       case "emotion":
-        return status === "Happy" || status === "Focused" ? "success" :
-               status === "Neutral" ? "secondary" : "warning";
+        return status === "Happy" || status === "Focused"
+          ? "success"
+          : status === "Neutral"
+          ? "secondary"
+          : "warning";
       default:
         return "secondary";
     }
@@ -106,15 +107,18 @@ const TeacherDashboard = () => {
               <CardContent>
                 <div className="relative">
                   <img
-                    src="http://192.168.0.194:5050/teacher_video_feed"
+                    src={`${BASE_URL}/api/teacher_feed`} // ✅ dynamic feed
                     alt="Teacher video feed"
                     className="w-full h-48 object-cover rounded-lg border border-border"
                     onError={(e) => {
-                      e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240' viewBox='0 0 320 240'%3E%3Crect width='320' height='240' fill='%23f0f0f0'/%3E%3Ctext x='160' y='120' text-anchor='middle' font-family='Arial' font-size='18' fill='%23666'%3ETeacher View%3C/text%3E%3C/svg%3E";
+                      e.currentTarget.src =
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240' viewBox='0 0 320 240'%3E%3Crect width='320' height='240' fill='%23f0f0f0'/%3E%3Ctext x='160' y='120' text-anchor='middle' font-family='Arial' font-size='18' fill='%23666'%3ETeacher View%3C/text%3E%3C/svg%3E";
                     }}
                   />
                   <div className="absolute top-2 right-2">
-                    <Badge variant="destructive" className="animate-pulse">● LIVE</Badge>
+                    <Badge variant="destructive" className="animate-pulse">
+                      ● LIVE
+                    </Badge>
                   </div>
                 </div>
               </CardContent>
@@ -182,21 +186,30 @@ const TeacherDashboard = () => {
                               <div className="flex gap-2 flex-wrap">
                                 <div className="flex items-center gap-1">
                                   <Brain className="h-3 w-3 text-muted-foreground" />
-                                  <Badge variant={getStatusColor(student.emotion, "emotion")} className="text-xs">
+                                  <Badge
+                                    variant={getStatusColor(student.emotion, "emotion")}
+                                    className="text-xs"
+                                  >
                                     {student.emotion}
                                   </Badge>
                                 </div>
 
                                 <div className="flex items-center gap-1">
                                   <Eye className="h-3 w-3 text-muted-foreground" />
-                                  <Badge variant={getStatusColor(student.attention, "attention")} className="text-xs">
+                                  <Badge
+                                    variant={getStatusColor(student.attention, "attention")}
+                                    className="text-xs"
+                                  >
                                     {student.attention} Attention
                                   </Badge>
                                 </div>
 
                                 <div className="flex items-center gap-1">
                                   <Monitor className="h-3 w-3 text-muted-foreground" />
-                                  <Badge variant={getStatusColor(student.posture, "posture")} className="text-xs">
+                                  <Badge
+                                    variant={getStatusColor(student.posture, "posture")}
+                                    className="text-xs"
+                                  >
                                     {student.posture}
                                   </Badge>
                                 </div>
@@ -208,7 +221,8 @@ const TeacherDashboard = () => {
                                 Last seen: {student.last_seen}
                               </div>
                               <div className="text-sm">
-                                Confidence: <span className="font-medium">{student.confidence.toFixed(1)}%</span>
+                                Confidence:{" "}
+                                <span className="font-medium">{student.confidence.toFixed(1)}%</span>
                               </div>
                             </div>
                           </div>
