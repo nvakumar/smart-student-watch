@@ -1,9 +1,22 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Monitor, Brain, Eye, Users, ShieldCheck, TrendingUp } from "lucide-react";
+import { startRecognition } from "@/api"; // Make sure this exists in src/api.ts
 
 const Home = () => {
+  const [status, setStatus] = useState("");
+
+  const testBackend = async () => {
+    try {
+      const res = await startRecognition();
+      setStatus("✅ Success: " + res.message);
+    } catch (err) {
+      setStatus("❌ Failed to connect to backend.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -102,6 +115,13 @@ const Home = () => {
             </Card>
           </div>
         </div>
+      </section>
+
+      {/* Backend Test Section */}
+      <section className="py-8 px-4 bg-muted text-center">
+        <h3 className="text-xl font-semibold mb-4">Test Backend Integration</h3>
+        <Button onClick={testBackend} variant="secondary">Start Recognition (Test)</Button>
+        {status && <p className="mt-2 text-muted-foreground">{status}</p>}
       </section>
 
       {/* CTA Section */}
