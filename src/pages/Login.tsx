@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { LogIn, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { loginStudent } from "@/api"; // NEW: Import API function
 
 const Login = () => {
   const [registrationId, setRegistrationId] = useState("");
@@ -16,7 +17,7 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!registrationId.trim()) {
       toast({
         title: "Error",
@@ -29,39 +30,19 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          registration_id: registrationId
-        }),
+      const data = await loginStudent(registrationId); // USE API CALL
+
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${data.student_name || 'Student'}!`,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Login Successful",
-          description: `Welcome back, ${data.student_name || 'Student'}!`,
-        });
-        
-        // Store login data in localStorage
-        localStorage.setItem('studentData', JSON.stringify(data));
-        navigate('/dashboard');
-      } else {
-        toast({
-          title: "Login Failed",
-          description: data.error || "Invalid registration ID",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Login error:', error);
+      localStorage.setItem('studentData', JSON.stringify(data));
+      navigate('/dashboard');
+    } catch (error: any) {
       toast({
-        title: "Connection Error",
-        description: "Unable to connect to server. Please try again.",
+        title: "Login Failed",
+        description: error.message || "Unable to connect to server.",
         variant: "destructive",
       });
     } finally {
