@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { getStudentReports, deleteAllStudentData } from "@/api"; // ✅ NEW
 
 interface StudentReport {
   id: string;
@@ -42,60 +43,17 @@ const Reports = () => {
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/get_reports');
-      
-      if (response.ok) {
-        const data = await response.json();
-        setReports(data.reports || []);
-      } else {
-        // Fallback demo data when Flask backend is not available
-        const demoReports: StudentReport[] = [
-          {
-            id: "1",
-            student_name: "Alice Johnson",
-            registration_id: "STU001",
-            report_date: "2024-01-15",
-            sessions_count: 12,
-            avg_attention: 87.5,
-            avg_emotion_score: 92.3,
-            posture_issues: 3,
-            download_url_csv: "/download/alice_report.csv",
-            download_url_pdf: "/download/alice_report.pdf"
-          },
-          {
-            id: "2",
-            student_name: "Bob Smith",
-            registration_id: "STU002",
-            report_date: "2024-01-15",
-            sessions_count: 8,
-            avg_attention: 74.2,
-            avg_emotion_score: 78.9,
-            posture_issues: 7,
-            download_url_csv: "/download/bob_report.csv",
-            download_url_pdf: "/download/bob_report.pdf"
-          },
-          {
-            id: "3",
-            student_name: "Carol White",
-            registration_id: "STU003",
-            report_date: "2024-01-15",
-            sessions_count: 15,
-            avg_attention: 94.1,
-            avg_emotion_score: 89.7,
-            posture_issues: 1,
-            download_url_csv: "/download/carol_report.csv",
-            download_url_pdf: "/download/carol_report.pdf"
-          }
-        ];
-        setReports(demoReports);
-      }
+      const data = await getStudentReports(); // ✅ Updated
+      setReports(data.reports || []);
     } catch (error) {
-      console.error('Error fetching reports:', error);
       toast({
         title: "Error",
         description: "Failed to fetch reports. Showing demo data.",
         variant: "destructive",
       });
+
+      // Optional: fallback demo data (remove if backend is ready)
+      setReports([]);
     } finally {
       setLoading(false);
     }
@@ -103,21 +61,18 @@ const Reports = () => {
 
   const handleDownload = async (url: string, filename: string) => {
     try {
-      // In a real implementation, this would download from the Flask backend
       toast({
         title: "Download Started",
         description: `Downloading ${filename}...`,
       });
-      
-      // Simulate download
-      const link = document.createElement('a');
+
+      const link = document.createElement("a");
       link.href = url;
       link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error('Download error:', error);
       toast({
         title: "Download Failed",
         description: "Unable to download the report file.",
@@ -129,29 +84,13 @@ const Reports = () => {
   const handleDeleteAllData = async () => {
     setDeleting(true);
     try {
-      const response = await fetch('/delete_all_students', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      await deleteAllStudentData(); // ✅ Updated
+      setReports([]);
+      toast({
+        title: "Data Deleted",
+        description: "All student data has been permanently deleted.",
       });
-
-      if (response.ok) {
-        setReports([]);
-        toast({
-          title: "Data Deleted",
-          description: "All student data has been permanently deleted.",
-        });
-      } else {
-        // Simulate successful deletion for demo
-        setReports([]);
-        toast({
-          title: "Data Deleted",
-          description: "All student data has been permanently deleted.",
-        });
-      }
     } catch (error) {
-      console.error('Delete error:', error);
       toast({
         title: "Delete Failed",
         description: "Failed to delete student data.",
@@ -168,87 +107,80 @@ const Reports = () => {
     return "destructive";
   };
 
-  const totalSessions = reports.reduce((sum, report) => sum + report.sessions_count, 0);
-  const avgAttention = reports.length > 0 
-    ? reports.reduce((sum, report) => sum + report.avg_attention, 0) / reports.length 
+  const totalSessions = reports.reduce((sum, r) => sum + r.sessions_count, 0);
+  const avgAttention = reports.length > 0
+    ? reports.reduce((sum, r) => sum + r.avg_attention, 0) / reports.length
     : 0;
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-card border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Student Reports</h1>
-              <p className="text-muted-foreground">Download and manage student monitoring reports</p>
-            </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={deleting}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete All Data
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-destructive" />
-                    Delete All Student Data
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete all student data, 
-                    monitoring records, and generated reports from the system.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteAllData} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Delete All Data
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Student Reports</h1>
+            <p className="text-muted-foreground">Download and manage student monitoring reports</p>
           </div>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" disabled={deleting}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete All Data
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  Delete All Student Data
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete all student data, monitoring records, and reports. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteAllData} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Delete All Data
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
+      {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Summary Stats */}
+        {/* Summary Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Card className="bg-gradient-card border-0 shadow-lg">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Total Students</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                <span className="text-2xl font-bold">{reports.length}</span>
-              </div>
+            <CardContent className="text-2xl font-bold flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              {reports.length}
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-card border-0 shadow-lg">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Sessions</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Total Sessions</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-accent" />
-                <span className="text-2xl font-bold">{totalSessions}</span>
-              </div>
+            <CardContent className="text-2xl font-bold flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-accent" />
+              {totalSessions}
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-card border-0 shadow-lg">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Avg Attention</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Avg Attention</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-success" />
-                <span className="text-2xl font-bold">{avgAttention.toFixed(1)}%</span>
-              </div>
+            <CardContent className="text-2xl font-bold flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-success" />
+              {avgAttention.toFixed(1)}%
             </CardContent>
           </Card>
         </div>
@@ -288,35 +220,29 @@ const Reports = () => {
                             <Badge variant="outline">{report.registration_id}</Badge>
                             <Badge variant="secondary">{report.sessions_count} sessions</Badge>
                           </div>
-                          
+
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
                               <span className="text-muted-foreground">Attention:</span>
-                              <div className="flex items-center gap-1 mt-1">
-                                <Badge variant={getScoreColor(report.avg_attention)} className="text-xs">
-                                  {report.avg_attention.toFixed(1)}%
-                                </Badge>
-                              </div>
+                              <Badge variant={getScoreColor(report.avg_attention)} className="text-xs mt-1">
+                                {report.avg_attention.toFixed(1)}%
+                              </Badge>
                             </div>
-                            
+
                             <div>
                               <span className="text-muted-foreground">Emotion:</span>
-                              <div className="flex items-center gap-1 mt-1">
-                                <Badge variant={getScoreColor(report.avg_emotion_score)} className="text-xs">
-                                  {report.avg_emotion_score.toFixed(1)}%
-                                </Badge>
-                              </div>
+                              <Badge variant={getScoreColor(report.avg_emotion_score)} className="text-xs mt-1">
+                                {report.avg_emotion_score.toFixed(1)}%
+                              </Badge>
                             </div>
-                            
+
                             <div>
                               <span className="text-muted-foreground">Posture Issues:</span>
-                              <div className="flex items-center gap-1 mt-1">
-                                <Badge variant={report.posture_issues > 5 ? "destructive" : "warning"} className="text-xs">
-                                  {report.posture_issues}
-                                </Badge>
-                              </div>
+                              <Badge variant={report.posture_issues > 5 ? "destructive" : "warning"} className="text-xs mt-1">
+                                {report.posture_issues}
+                              </Badge>
                             </div>
-                            
+
                             <div>
                               <span className="text-muted-foreground">Report Date:</span>
                               <div className="text-xs font-medium mt-1">
@@ -325,7 +251,7 @@ const Reports = () => {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex gap-2 ml-4">
                           <Button
                             size="sm"
