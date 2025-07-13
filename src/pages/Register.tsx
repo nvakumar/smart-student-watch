@@ -8,6 +8,7 @@ import { UserPlus, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { WebcamCapture } from "@/components/WebcamCapture";
 import { useToast } from "@/hooks/use-toast";
+import { registerStudent } from "@/api"; // 🔗 new import
 
 const Register = () => {
   const [studentName, setStudentName] = useState("");
@@ -20,7 +21,7 @@ const Register = () => {
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!studentName.trim() || !registrationId.trim()) {
       toast({
         title: "Error",
@@ -38,42 +39,20 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: studentName,
-          reg_id: registrationId,
-          imagesData: images
-        }),
+      const data = await registerStudent(studentName, registrationId, images); // 🔗 API call
+
+      toast({
+        title: "Registration Successful",
+        description: `Welcome ${studentName}! You can now login with your registration ID.`,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Registration Successful",
-          description: `Welcome ${studentName}! You can now login with your registration ID.`,
-        });
-        
-        // Redirect to login page after successful registration
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      } else {
-        toast({
-          title: "Registration Failed",
-          description: data.error || "Failed to register student",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Registration error:', error);
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } catch (error: any) {
       toast({
-        title: "Connection Error",
-        description: "Unable to connect to server. Please try again.",
+        title: "Registration Failed",
+        description: error.message || "Unable to connect to the server.",
         variant: "destructive",
       });
     } finally {
@@ -86,8 +65,8 @@ const Register = () => {
       <div className="min-h-screen bg-background py-8 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => setShowCamera(false)}
               className="mb-4"
             >
@@ -164,11 +143,7 @@ const Register = () => {
                 />
               </div>
 
-              <Button
-                type="submit"
-                className="w-full h-12"
-                variant="hero"
-              >
+              <Button type="submit" className="w-full h-12" variant="hero">
                 Continue to Face Registration
               </Button>
             </form>
